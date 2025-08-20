@@ -29,5 +29,6 @@ contract LendingPool is ILendingPool, Ownable, ReentrancyGuard {
     uint256 public constant BASE_RATE = 200; // 2%
     uint256 public constant SLOPE1 = 1000; // 10%
     uint256 public constant SLOPE2 = 5000; // 50%
+    uint256 public constant OPTIMAL_UTILIZATION = 8000; // 80%
 
 }
