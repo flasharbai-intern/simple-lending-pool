@@ -18,4 +18,6 @@ contract LendingPool is ILendingPool, Ownable, ReentrancyGuard {
 
     // State variables
     IERC20 public immutable asset;
+    LendingPoolToken public immutable lpToken;
+
 }
