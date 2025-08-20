@@ -34,5 +34,6 @@ contract LendingPool is ILendingPool, Ownable, ReentrancyGuard {
 
     // Collateralization parameters
     uint256 public constant COLLATERAL_FACTOR = 7500; // 75% - max borrow vs collateral
-    
+    uint256 public constant LIQUIDATION_THRESHOLD = 8500; // 85% - liquidation threshold
+
 }
