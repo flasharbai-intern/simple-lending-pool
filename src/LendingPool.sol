@@ -27,4 +27,6 @@ contract LendingPool is ILendingPool, Ownable, ReentrancyGuard {
 
     // Interest rate model parameters (annual rates in basis points)
     uint256 public constant BASE_RATE = 200; // 2%
+    uint256 public constant SLOPE1 = 1000; // 10%
+
 }
