@@ -13,4 +13,7 @@ import "./LendingPoolToken.sol";
  * @notice A simple lending pool where users can deposit tokens to earn yield and borrow against collateral
  * @dev Implements a basic lending/borrowing mechanism with interest accrual
  */
-contract LendingPool is ILendingPool, Ownable, ReentrancyGuard {}
+contract LendingPool is ILendingPool, Ownable, ReentrancyGuard {
+    using SafeERC20 for IERC20;
+
+}
