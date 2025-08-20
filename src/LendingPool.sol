@@ -8,4 +8,4 @@ import "@openzeppelin/contracts/utils/ReentrancyGuard.sol";
 import "./interfaces/ILendingPool.sol";
 import "./LendingPoolToken.sol";
 
-contract LendingPool {}
+contract LendingPool is ILendingPool, Ownable, ReentrancyGuard {}
