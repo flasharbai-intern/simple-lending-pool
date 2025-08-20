@@ -22,5 +22,6 @@ contract LendingPool is ILendingPool, Ownable, ReentrancyGuard {
 
     uint256 public totalDeposits;
     uint256 public totalBorrows;
+    uint256 public lastUpdateTimestamp;
 
 }
