@@ -20,4 +20,6 @@ contract LendingPool is ILendingPool, Ownable, ReentrancyGuard {
     IERC20 public immutable asset;
     LendingPoolToken public immutable lpToken;
 
+    uint256 public totalDeposits;
+
 }
