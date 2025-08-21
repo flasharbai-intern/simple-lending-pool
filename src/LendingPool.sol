@@ -42,4 +42,7 @@ contract LendingPool is ILendingPool, Ownable, ReentrancyGuard {
     uint256 public constant BASIS_POINTS = 10000;
     uint256 public constant SECONDS_PER_YEAR = 365 days;
 
+    // User data
+    mapping(address => UserInfo) public userInfo;
+    
 }
