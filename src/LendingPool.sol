@@ -79,4 +79,22 @@ contract LendingPool is ILendingPool, Ownable, ReentrancyGuard {
         borrowIndex += interestAccrued;
         lastUpdateTimestamp = block.timestamp;
     }
+
+    function deposit(uint256 amount) external nonReentrant {
+        require(amount > 0, "Amount must be greater than 0");
+        updateBorrowIndex();
+        
+        uint256 lpTokensToMint;
+        if (lpToken.totalSupply() == 0) {
+            lpTokensToMint = amount;
+        } else {
+            lpTokensToMint = (amount * lpToken.totalSupply()) / getTotalAssets();
+        }
+        
+        asset.safeTransferFrom(msg.sender, address(this), amount);
+        totalDeposits += amount;
+        lpToken.mint(msg.sender, lpTokensToMint);
+        
+        emit Deposit(msg.sender, amount, lpTokensToMint);
+    }
 }
