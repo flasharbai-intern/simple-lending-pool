@@ -53,5 +53,6 @@ contract LendingPool is ILendingPool, Ownable, ReentrancyGuard {
 
     // Events
     event Deposit(address indexed user, uint256 amount, uint256 lpTokens);
-    
+    event Withdraw(address indexed user, uint256 amount, uint256 lpTokens);
+
 }
