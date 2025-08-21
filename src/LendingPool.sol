@@ -44,5 +44,10 @@ contract LendingPool is ILendingPool, Ownable, ReentrancyGuard {
 
     // User data
     mapping(address => UserInfo) public userInfo;
-    
+
+    struct UserInfo {
+        uint256 collateralBalance;
+        uint256 borrowBalance;
+        uint256 borrowIndex;
+    }
 }
