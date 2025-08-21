@@ -37,4 +37,68 @@ contract LendingPool is ILendingPool, Ownable, ReentrancyGuard {
     uint256 public constant LIQUIDATION_THRESHOLD = 8500; // 85% - liquidation threshold
     uint256 public constant LIQUIDATION_BONUS = 500; // 5% - liquidator bonus
 
+    // Precision constants
+    uint256 public constant PRECISION = 1e18;
+    uint256 public constant BASIS_POINTS = 10000;
+    uint256 public constant SECONDS_PER_YEAR = 365 days;
+
+    // User data
+    mapping(address => UserInfo) public userInfo;
+
+    struct UserInfo {
+        uint256 collateralBalance;
+        uint256 borrowBalance;
+        uint256 borrowIndex;
+    }
+
+    // Events
+    event Deposit(address indexed user, uint256 amount, uint256 lpTokens);
+    event Withdraw(address indexed user, uint256 amount, uint256 lpTokens);
+    event DepositCollateral(address indexed user, uint256 amount);
+    event WithdrawCollateral(address indexed user, uint256 amount);
+    event Borrow(address indexed user, uint256 amount);
+    event Repay(address indexed user, uint256 amount);
+    event Liquidation(address indexed liquidator, address indexed borrower, uint256 collateralSeized, uint256 debtRepaid);
+
+    constructor(address _asset, string memory _name, string memory _symbol) Ownable(msg.sender) {
+        asset = IERC20(_asset);
+        lpToken = new LendingPoolToken(_name, _symbol);
+        borrowIndex = PRECISION;
+        lastUpdateTimestamp = block.timestamp;
+    }
+
+    /**
+     * @notice Updates the borrow index based on accrued interest
+     */
+    function updateBorrowIndex() public {
+        uint256 timeDelta = block.timestamp - lastUpdateTimestamp;
+        if (timeDelta == 0) return;
+        
+        uint256 borrowRate = getBorrowRate();
+        uint256 interestAccrued = (borrowRate * timeDelta * borrowIndex) / (SECONDS_PER_YEAR * BASIS_POINTS);
+        borrowIndex += interestAccrued;
+        lastUpdateTimestamp = block.timestamp;
+    }
+
+    /**
+     * @notice Deposits assets into the pool and mints LP tokens
+     * @param amount Amount of assets to deposit
+     */
+    function deposit(uint256 amount) external nonReentrant {
+        require(amount > 0, "Amount must be greater than 0");
+        updateBorrowIndex();
+        
+        uint256 lpTokensToMint;
+        if (lpToken.totalSupply() == 0) {
+            lpTokensToMint = amount;
+        } else {
+            lpTokensToMint = (amount * lpToken.totalSupply()) / getTotalAssets();
+        }
+        
+        asset.safeTransferFrom(msg.sender, address(this), amount);
+        totalDeposits += amount;
+        lpToken.mint(msg.sender, lpTokensToMint);
+        
+        emit Deposit(msg.sender, amount, lpTokensToMint);
+    }
 }
