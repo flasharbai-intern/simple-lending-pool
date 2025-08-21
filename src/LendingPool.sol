@@ -60,4 +60,10 @@ contract LendingPool is ILendingPool, Ownable, ReentrancyGuard {
     event Repay(address indexed user, uint256 amount);
     event Liquidation(address indexed liquidator, address indexed borrower, uint256 collateralSeized, uint256 debtRepaid);
 
+    constructor(address _asset, string memory _name, string memory _symbol) Ownable(msg.sender) {
+        asset = IERC20(_asset);
+        lpToken = new LendingPoolToken(_name, _symbol);
+        borrowIndex = PRECISION;
+        lastUpdateTimestamp = block.timestamp;
+    }
 }
