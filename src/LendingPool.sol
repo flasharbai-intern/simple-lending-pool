@@ -58,5 +58,6 @@ contract LendingPool is ILendingPool, Ownable, ReentrancyGuard {
     event WithdrawCollateral(address indexed user, uint256 amount);
     event Borrow(address indexed user, uint256 amount);
     event Repay(address indexed user, uint256 amount);
+    event Liquidation(address indexed liquidator, address indexed borrower, uint256 collateralSeized, uint256 debtRepaid);
 
 }
