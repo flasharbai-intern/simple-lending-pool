@@ -39,5 +39,6 @@ contract LendingPool is ILendingPool, Ownable, ReentrancyGuard {
 
     // Precision constants
     uint256 public constant PRECISION = 1e18;
-    
+    uint256 public constant BASIS_POINTS = 10000;
+
 }
