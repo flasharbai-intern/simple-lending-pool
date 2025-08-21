@@ -37,4 +37,7 @@ contract LendingPool is ILendingPool, Ownable, ReentrancyGuard {
     uint256 public constant LIQUIDATION_THRESHOLD = 8500; // 85% - liquidation threshold
     uint256 public constant LIQUIDATION_BONUS = 500; // 5% - liquidator bonus
 
+    // Precision constants
+    uint256 public constant PRECISION = 1e18;
+    
 }
