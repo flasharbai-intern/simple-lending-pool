@@ -101,4 +101,86 @@ contract LendingPool is ILendingPool, Ownable, ReentrancyGuard {
         
         emit Deposit(msg.sender, amount, lpTokensToMint);
     }
+
+    /**
+     * @notice Withdraws assets from the pool by burning LP tokens
+     * @param lpTokenAmount Amount of LP tokens to burn
+     */
+    function withdraw(uint256 lpTokenAmount) external nonReentrant {
+        require(lpTokenAmount > 0, "Amount must be greater than 0");
+        require(lpToken.balanceOf(msg.sender) >= lpTokenAmount, "Insufficient LP tokens");
+        updateBorrowIndex();
+        
+        uint256 assetsToWithdraw = (lpTokenAmount * getTotalAssets()) / lpToken.totalSupply();
+        require(asset.balanceOf(address(this)) >= assetsToWithdraw, "Insufficient liquidity");
+        
+        lpToken.burn(msg.sender, lpTokenAmount);
+        totalDeposits -= assetsToWithdraw;
+        asset.safeTransfer(msg.sender, assetsToWithdraw);
+        
+        emit Withdraw(msg.sender, assetsToWithdraw, lpTokenAmount);
+    }
+
+    /**
+     * @notice Deposits collateral to enable borrowing
+     * @param amount Amount of collateral to deposit
+     */
+    function depositCollateral(uint256 amount) external nonReentrant {
+        require(amount > 0, "Amount must be greater than 0");
+        
+        asset.safeTransferFrom(msg.sender, address(this), amount);
+        userInfo[msg.sender].collateralBalance += amount;
+        
+        emit DepositCollateral(msg.sender, amount);
+    }
+
+    /**
+     * @notice Withdraws collateral if health factor allows
+     * @param amount Amount of collateral to withdraw
+     */
+    function withdrawCollateral(uint256 amount) external nonReentrant {
+        require(amount > 0, "Amount must be greater than 0");
+        require(userInfo[msg.sender].collateralBalance >= amount, "Insufficient collateral");
+        updateBorrowIndex();
+        
+        UserInfo storage user = userInfo[msg.sender];
+        user.collateralBalance -= amount;
+        
+        // Check health factor after withdrawal
+        uint256 borrowBalance = getUserBorrowBalance(msg.sender);
+        if (borrowBalance > 0) {
+            require(getHealthFactor(msg.sender) >= PRECISION, "Health factor too low");
+        }
+        
+        asset.safeTransfer(msg.sender, amount);
+        emit WithdrawCollateral(msg.sender, amount);
+    }
+
+    /**
+     * @notice Borrows assets against collateral
+     * @param amount Amount to borrow
+     */
+    function borrow(uint256 amount) external nonReentrant {
+        require(amount > 0, "Amount must be greater than 0");
+        require(asset.balanceOf(address(this)) >= amount, "Insufficient liquidity");
+        updateBorrowIndex();
+        
+        UserInfo storage user = userInfo[msg.sender];
+        
+        // Update user's borrow balance
+        if (user.borrowBalance > 0) {
+            user.borrowBalance = (user.borrowBalance * borrowIndex) / user.borrowIndex;
+        }
+        user.borrowBalance += amount;
+        user.borrowIndex = borrowIndex;
+        
+        // Check borrow capacity
+        uint256 maxBorrow = (user.collateralBalance * COLLATERAL_FACTOR) / BASIS_POINTS;
+        require(user.borrowBalance <= maxBorrow, "Insufficient collateral");
+        
+        totalBorrows += amount;
+        asset.safeTransfer(msg.sender, amount);
+        
+        emit Borrow(msg.sender, amount);
+    }
 }
