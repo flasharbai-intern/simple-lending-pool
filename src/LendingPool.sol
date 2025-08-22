@@ -121,6 +121,10 @@ contract LendingPool is ILendingPool, Ownable, ReentrancyGuard {
         emit Withdraw(msg.sender, assetsToWithdraw, lpTokenAmount);
     }
 
+    /**
+     * @notice Deposits collateral to enable borrowing
+     * @param amount Amount of collateral to deposit
+     */
     function depositCollateral(uint256 amount) external nonReentrant {
         require(amount > 0, "Amount must be greater than 0");
         
