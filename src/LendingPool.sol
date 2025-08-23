@@ -242,4 +242,17 @@ contract LendingPool is ILendingPool, Ownable, ReentrancyGuard {
         
         emit Liquidation(msg.sender, borrower, collateralToSeize, repayAmount);
     }
+
+    function getBorrowRate() public view returns (uint256) {
+        if (totalDeposits == 0) return BASE_RATE;
+        
+        uint256 utilization = (totalBorrows * BASIS_POINTS) / totalDeposits;
+        
+        if (utilization <= OPTIMAL_UTILIZATION) {
+            return BASE_RATE + (utilization * SLOPE1) / BASIS_POINTS;
+        } else {
+            uint256 excessUtilization = utilization - OPTIMAL_UTILIZATION;
+            return BASE_RATE + SLOPE1 + (excessUtilization * SLOPE2) / BASIS_POINTS;
+        }
+    }
 }
