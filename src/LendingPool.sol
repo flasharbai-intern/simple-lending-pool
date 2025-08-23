@@ -260,6 +260,10 @@ contract LendingPool is ILendingPool, Ownable, ReentrancyGuard {
         }
     }
 
+    /**
+     * @notice Gets the current supply rate
+     * @return Annual supply rate in basis points
+     */
     function getSupplyRate() external view returns (uint256) {
         if (totalDeposits == 0) return 0;
         
