@@ -207,6 +207,11 @@ contract LendingPool is ILendingPool, Ownable, ReentrancyGuard {
         emit Repay(msg.sender, repayAmount);
     }
 
+    /**
+     * @notice Liquidates an undercollateralized position
+     * @param borrower Address of the borrower to liquidate
+     * @param repayAmount Amount of debt to repay
+     */
     function liquidate(address borrower, uint256 repayAmount) external nonReentrant {
         require(borrower != msg.sender, "Cannot liquidate yourself");
         updateBorrowIndex();
