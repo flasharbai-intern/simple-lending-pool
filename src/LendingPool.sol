@@ -183,4 +183,23 @@ contract LendingPool is ILendingPool, Ownable, ReentrancyGuard {
         
         emit Borrow(msg.sender, amount);
     }
+
+    function repay(uint256 amount) external nonReentrant {
+        require(amount > 0, "Amount must be greater than 0");
+        updateBorrowIndex();
+        
+        UserInfo storage user = userInfo[msg.sender];
+        uint256 currentBorrowBalance = getUserBorrowBalance(msg.sender);
+        require(currentBorrowBalance > 0, "No debt to repay");
+        
+        uint256 repayAmount = amount > currentBorrowBalance ? currentBorrowBalance : amount;
+        
+        user.borrowBalance = currentBorrowBalance - repayAmount;
+        user.borrowIndex = borrowIndex;
+        
+        totalBorrows -= repayAmount;
+        asset.safeTransferFrom(msg.sender, address(this), repayAmount);
+        
+        emit Repay(msg.sender, repayAmount);
+    }
 }
