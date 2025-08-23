@@ -273,6 +273,10 @@ contract LendingPool is ILendingPool, Ownable, ReentrancyGuard {
         return (borrowRate * utilization) / BASIS_POINTS;
     }
 
+    /**
+     * @notice Gets the total assets in the pool (deposits + accrued interest)
+     * @return Total assets
+     */
     function getTotalAssets() public view returns (uint256) {
         return asset.balanceOf(address(this)) + totalBorrows;
     }
