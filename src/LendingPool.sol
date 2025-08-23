@@ -183,4 +183,101 @@ contract LendingPool is ILendingPool, Ownable, ReentrancyGuard {
         
         emit Borrow(msg.sender, amount);
     }
+
+    /**
+     * @notice Repays borrowed assets
+     * @param amount Amount to repay
+     */
+    function repay(uint256 amount) external nonReentrant {
+        require(amount > 0, "Amount must be greater than 0");
+        updateBorrowIndex();
+        
+        UserInfo storage user = userInfo[msg.sender];
+        uint256 currentBorrowBalance = getUserBorrowBalance(msg.sender);
+        require(currentBorrowBalance > 0, "No debt to repay");
+        
+        uint256 repayAmount = amount > currentBorrowBalance ? currentBorrowBalance : amount;
+        
+        user.borrowBalance = currentBorrowBalance - repayAmount;
+        user.borrowIndex = borrowIndex;
+        
+        totalBorrows -= repayAmount;
+        asset.safeTransferFrom(msg.sender, address(this), repayAmount);
+        
+        emit Repay(msg.sender, repayAmount);
+    }
+
+    /**
+     * @notice Liquidates an undercollateralized position
+     * @param borrower Address of the borrower to liquidate
+     * @param repayAmount Amount of debt to repay
+     */
+    function liquidate(address borrower, uint256 repayAmount) external nonReentrant {
+        require(borrower != msg.sender, "Cannot liquidate yourself");
+        updateBorrowIndex();
+        
+        require(getHealthFactor(borrower) < PRECISION, "Position is healthy");
+        
+        UserInfo storage borrowerInfo = userInfo[borrower];
+        uint256 borrowBalance = getUserBorrowBalance(borrower);
+        require(borrowBalance > 0, "No debt to liquidate");
+        
+        uint256 maxRepay = (borrowBalance * 5000) / BASIS_POINTS; // Max 50% of debt
+        repayAmount = repayAmount > maxRepay ? maxRepay : repayAmount;
+        
+        // Calculate collateral to seize (with liquidation bonus)
+        uint256 collateralToSeize = (repayAmount * (BASIS_POINTS + LIQUIDATION_BONUS)) / BASIS_POINTS;
+        require(borrowerInfo.collateralBalance >= collateralToSeize, "Insufficient collateral");
+        
+        // Update borrower's balances
+        borrowerInfo.borrowBalance = borrowBalance - repayAmount;
+        borrowerInfo.borrowIndex = borrowIndex;
+        borrowerInfo.collateralBalance -= collateralToSeize;
+        
+        totalBorrows -= repayAmount;
+        
+        // Transfer assets
+        asset.safeTransferFrom(msg.sender, address(this), repayAmount);
+        asset.safeTransfer(msg.sender, collateralToSeize);
+        
+        emit Liquidation(msg.sender, borrower, collateralToSeize, repayAmount);
+    }
+
+    /**
+     * @notice Gets the current borrow rate
+     * @return Annual borrow rate in basis points
+     */
+    function getBorrowRate() public view returns (uint256) {
+        if (totalDeposits == 0) return BASE_RATE;
+        
+        uint256 utilization = (totalBorrows * BASIS_POINTS) / totalDeposits;
+        
+        if (utilization <= OPTIMAL_UTILIZATION) {
+            return BASE_RATE + (utilization * SLOPE1) / BASIS_POINTS;
+        } else {
+            uint256 excessUtilization = utilization - OPTIMAL_UTILIZATION;
+            return BASE_RATE + SLOPE1 + (excessUtilization * SLOPE2) / BASIS_POINTS;
+        }
+    }
+
+    /**
+     * @notice Gets the current supply rate
+     * @return Annual supply rate in basis points
+     */
+    function getSupplyRate() external view returns (uint256) {
+        if (totalDeposits == 0) return 0;
+        
+        uint256 borrowRate = getBorrowRate();
+        uint256 utilization = (totalBorrows * BASIS_POINTS) / totalDeposits;
+        
+        return (borrowRate * utilization) / BASIS_POINTS;
+    }
+
+    /**
+     * @notice Gets the total assets in the pool (deposits + accrued interest)
+     * @return Total assets
+     */
+    function getTotalAssets() public view returns (uint256) {
+        return asset.balanceOf(address(this)) + totalBorrows;
+    }
 }
