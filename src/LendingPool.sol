@@ -206,4 +206,35 @@ contract LendingPool is ILendingPool, Ownable, ReentrancyGuard {
         
         emit Repay(msg.sender, repayAmount);
     }
+
+    function liquidate(address borrower, uint256 repayAmount) external nonReentrant {
+        require(borrower != msg.sender, "Cannot liquidate yourself");
+        updateBorrowIndex();
+        
+        require(getHealthFactor(borrower) < PRECISION, "Position is healthy");
+        
+        UserInfo storage borrowerInfo = userInfo[borrower];
+        uint256 borrowBalance = getUserBorrowBalance(borrower);
+        require(borrowBalance > 0, "No debt to liquidate");
+        
+        uint256 maxRepay = (borrowBalance * 5000) / BASIS_POINTS; // Max 50% of debt
+        repayAmount = repayAmount > maxRepay ? maxRepay : repayAmount;
+        
+        // Calculate collateral to seize (with liquidation bonus)
+        uint256 collateralToSeize = (repayAmount * (BASIS_POINTS + LIQUIDATION_BONUS)) / BASIS_POINTS;
+        require(borrowerInfo.collateralBalance >= collateralToSeize, "Insufficient collateral");
+        
+        // Update borrower's balances
+        borrowerInfo.borrowBalance = borrowBalance - repayAmount;
+        borrowerInfo.borrowIndex = borrowIndex;
+        borrowerInfo.collateralBalance -= collateralToSeize;
+        
+        totalBorrows -= repayAmount;
+        
+        // Transfer assets
+        asset.safeTransferFrom(msg.sender, address(this), repayAmount);
+        asset.safeTransfer(msg.sender, collateralToSeize);
+        
+        emit Liquidation(msg.sender, borrower, collateralToSeize, repayAmount);
+    }
 }
