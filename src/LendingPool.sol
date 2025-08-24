@@ -280,4 +280,38 @@ contract LendingPool is ILendingPool, Ownable, ReentrancyGuard {
     function getTotalAssets() public view returns (uint256) {
         return asset.balanceOf(address(this)) + totalBorrows;
     }
+
+    /**
+     * @notice Gets a user's current borrow balance including accrued interest
+     * @param user User address
+     * @return Current borrow balance
+     */
+    function getUserBorrowBalance(address user) public view returns (uint256) {
+        UserInfo storage userInfo_ = userInfo[user];
+        if (userInfo_.borrowBalance == 0) return 0;
+        
+        return (userInfo_.borrowBalance * borrowIndex) / userInfo_.borrowIndex;
+    }
+
+    /**
+     * @notice Gets a user's health factor (collateral value / borrow value at liquidation threshold)
+     * @param user User address
+     * @return Health factor (1e18 = 100%)
+     */
+    function getHealthFactor(address user) public view returns (uint256) {
+        uint256 borrowBalance = getUserBorrowBalance(user);
+        if (borrowBalance == 0) return type(uint256).max;
+        
+        uint256 collateralValue = (userInfo[user].collateralBalance * LIQUIDATION_THRESHOLD) / BASIS_POINTS;
+        return (collateralValue * PRECISION) / borrowBalance;
+    }
+
+    /**
+     * @notice Gets the utilization rate of the pool
+     * @return Utilization rate in basis points
+     */
+    function getUtilizationRate() external view returns (uint256) {
+        if (totalDeposits == 0) return 0;
+        return (totalBorrows * BASIS_POINTS) / totalDeposits;
+    }
 }
