@@ -280,4 +280,11 @@ contract LendingPool is ILendingPool, Ownable, ReentrancyGuard {
     function getTotalAssets() public view returns (uint256) {
         return asset.balanceOf(address(this)) + totalBorrows;
     }
+
+    function getUserBorrowBalance(address user) public view returns (uint256) {
+        UserInfo storage userInfo_ = userInfo[user];
+        if (userInfo_.borrowBalance == 0) return 0;
+        
+        return (userInfo_.borrowBalance * borrowIndex) / userInfo_.borrowIndex;
+    }
 }
