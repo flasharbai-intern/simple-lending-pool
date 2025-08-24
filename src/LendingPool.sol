@@ -305,4 +305,9 @@ contract LendingPool is ILendingPool, Ownable, ReentrancyGuard {
         uint256 collateralValue = (userInfo[user].collateralBalance * LIQUIDATION_THRESHOLD) / BASIS_POINTS;
         return (collateralValue * PRECISION) / borrowBalance;
     }
+
+    function getUtilizationRate() external view returns (uint256) {
+        if (totalDeposits == 0) return 0;
+        return (totalBorrows * BASIS_POINTS) / totalDeposits;
+    }
 }
