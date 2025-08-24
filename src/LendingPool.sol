@@ -281,6 +281,11 @@ contract LendingPool is ILendingPool, Ownable, ReentrancyGuard {
         return asset.balanceOf(address(this)) + totalBorrows;
     }
 
+    /**
+     * @notice Gets a user's current borrow balance including accrued interest
+     * @param user User address
+     * @return Current borrow balance
+     */
     function getUserBorrowBalance(address user) public view returns (uint256) {
         UserInfo storage userInfo_ = userInfo[user];
         if (userInfo_.borrowBalance == 0) return 0;
