@@ -292,4 +292,12 @@ contract LendingPool is ILendingPool, Ownable, ReentrancyGuard {
         
         return (userInfo_.borrowBalance * borrowIndex) / userInfo_.borrowIndex;
     }
+
+    function getHealthFactor(address user) public view returns (uint256) {
+        uint256 borrowBalance = getUserBorrowBalance(user);
+        if (borrowBalance == 0) return type(uint256).max;
+        
+        uint256 collateralValue = (userInfo[user].collateralBalance * LIQUIDATION_THRESHOLD) / BASIS_POINTS;
+        return (collateralValue * PRECISION) / borrowBalance;
+    }
 }
