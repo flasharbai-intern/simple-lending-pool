@@ -9,4 +9,10 @@ import "@openzeppelin/contracts/access/Ownable.sol";
  * @notice ERC20 token representing shares in the lending pool
  * @dev Only the lending pool contract can mint and burn tokens
  */
-contract LendingPoolToken is ERC20, Ownable {}
+contract LendingPoolToken is ERC20, Ownable {
+
+    constructor(string memory name, string memory symbol) 
+        ERC20(name, symbol) 
+        Ownable(msg.sender) 
+    {}
+}
