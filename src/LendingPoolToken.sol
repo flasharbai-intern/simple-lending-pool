@@ -15,4 +15,8 @@ contract LendingPoolToken is ERC20, Ownable {
         ERC20(name, symbol) 
         Ownable(msg.sender) 
     {}
+
+    function mint(address to, uint256 amount) external onlyOwner {
+        _mint(to, amount);
+    }
 }
