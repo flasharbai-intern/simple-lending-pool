@@ -25,6 +25,11 @@ contract LendingPoolToken is ERC20, Ownable {
         _mint(to, amount);
     }
 
+     /**
+     * @notice Burns LP tokens from a user
+     * @param from Address to burn tokens from
+     * @param amount Amount of tokens to burn
+     */
     function burn(address from, uint256 amount) external onlyOwner {
         _burn(from, amount);
     }
