@@ -16,6 +16,11 @@ contract LendingPoolToken is ERC20, Ownable {
         Ownable(msg.sender) 
     {}
 
+    /**
+     * @notice Mints LP tokens to a user
+     * @param to Address to mint tokens to
+     * @param amount Amount of tokens to mint
+     */
     function mint(address to, uint256 amount) external onlyOwner {
         _mint(to, amount);
     }
