@@ -13,4 +13,7 @@ interface ILendingPool {
         uint256 borrowBalance;
         uint256 borrowIndex;
     }
+
+    // Events
+
 }
