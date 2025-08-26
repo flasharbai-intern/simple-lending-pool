@@ -7,6 +7,7 @@ pragma solidity ^0.8.19;
  */
 interface ILendingPool {
 
+    // Structs
     struct UserInfo {
         uint256 collateralBalance;
         uint256 borrowBalance;
