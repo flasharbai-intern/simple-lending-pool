@@ -29,5 +29,6 @@ interface ILendingPool {
     function depositCollateral(uint256 amount) external;
     function withdrawCollateral(uint256 amount) external;
     function borrow(uint256 amount) external;
+    function repay(uint256 amount) external;
 
 }
