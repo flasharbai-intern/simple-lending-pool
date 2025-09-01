@@ -24,5 +24,6 @@ interface ILendingPool {
     event Liquidation(address indexed liquidator, address indexed borrower, uint256 collateralSeized, uint256 debtRepaid);
 
     // Core functions
+    function deposit(uint256 amount) external;
 
 }
