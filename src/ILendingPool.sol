@@ -23,4 +23,6 @@ interface ILendingPool {
     event Repay(address indexed user, uint256 amount);
     event Liquidation(address indexed liquidator, address indexed borrower, uint256 collateralSeized, uint256 debtRepaid);
 
+    // Core functions
+
 }
