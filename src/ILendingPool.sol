@@ -26,5 +26,6 @@ interface ILendingPool {
     // Core functions
     function deposit(uint256 amount) external;
     function withdraw(uint256 lpTokenAmount) external;
+    function depositCollateral(uint256 amount) external;
 
 }
