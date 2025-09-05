@@ -33,5 +33,6 @@ interface ILendingPool {
     function liquidate(address borrower, uint256 repayAmount) external;
 
     // View functions
+    function getBorrowRate() external view returns (uint256);
 
 }
