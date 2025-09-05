@@ -34,5 +34,6 @@ interface ILendingPool {
 
     // View functions
     function getBorrowRate() external view returns (uint256);
+    function getSupplyRate() external view returns (uint256);
 
 }
