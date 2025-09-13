@@ -25,7 +25,6 @@ interface ILendingPool {
 
     // State variables getters
     function totalDeposits() external view returns (uint256);
-        function totalBorrows() external view returns (uint256);
+    function totalBorrows() external view returns (uint256);
     function borrowIndex() external view returns (uint256);
-
 }
