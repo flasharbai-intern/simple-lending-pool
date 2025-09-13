@@ -6,12 +6,6 @@ pragma solidity ^0.8.19;
  * @notice Interface for the lending pool contract
  */
 interface ILendingPool {
-    // Structs
-    struct UserInfo {
-        uint256 collateralBalance;
-        uint256 borrowBalance;
-        uint256 borrowIndex;
-    }
 
     // Events
     event Deposit(address indexed user, uint256 amount, uint256 lpTokens);
