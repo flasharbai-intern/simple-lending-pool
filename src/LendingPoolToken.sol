@@ -10,11 +10,7 @@ import "@openzeppelin/contracts/access/Ownable.sol";
  * @dev Only the lending pool contract can mint and burn tokens
  */
 contract LendingPoolToken is ERC20, Ownable {
-
-    constructor(string memory name, string memory symbol) 
-        ERC20(name, symbol) 
-        Ownable(msg.sender) 
-    {}
+    constructor(string memory name, string memory symbol) ERC20(name, symbol) Ownable(msg.sender) {}
 
     /**
      * @notice Mints LP tokens to a user
@@ -25,7 +21,7 @@ contract LendingPoolToken is ERC20, Ownable {
         _mint(to, amount);
     }
 
-     /**
+    /**
      * @notice Burns LP tokens from a user
      * @param from Address to burn tokens from
      * @param amount Amount of tokens to burn

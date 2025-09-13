@@ -58,7 +58,9 @@ contract LendingPool is ILendingPool, Ownable, ReentrancyGuard {
     event WithdrawCollateral(address indexed user, uint256 amount);
     event Borrow(address indexed user, uint256 amount);
     event Repay(address indexed user, uint256 amount);
-    event Liquidation(address indexed liquidator, address indexed borrower, uint256 collateralSeized, uint256 debtRepaid);
+    event Liquidation(
+        address indexed liquidator, address indexed borrower, uint256 collateralSeized, uint256 debtRepaid
+    );
 
     constructor(address _asset, string memory _name, string memory _symbol) Ownable(msg.sender) {
         asset = IERC20(_asset);
@@ -73,7 +75,7 @@ contract LendingPool is ILendingPool, Ownable, ReentrancyGuard {
     function updateBorrowIndex() public {
         uint256 timeDelta = block.timestamp - lastUpdateTimestamp;
         if (timeDelta == 0) return;
-        
+
         uint256 borrowRate = getBorrowRate();
         uint256 interestAccrued = (borrowRate * timeDelta * borrowIndex) / (SECONDS_PER_YEAR * BASIS_POINTS);
         borrowIndex += interestAccrued;
@@ -87,18 +89,18 @@ contract LendingPool is ILendingPool, Ownable, ReentrancyGuard {
     function deposit(uint256 amount) external nonReentrant {
         require(amount > 0, "Amount must be greater than 0");
         updateBorrowIndex();
-        
+
         uint256 lpTokensToMint;
         if (lpToken.totalSupply() == 0) {
             lpTokensToMint = amount;
         } else {
             lpTokensToMint = (amount * lpToken.totalSupply()) / getTotalAssets();
         }
-        
+
         asset.safeTransferFrom(msg.sender, address(this), amount);
         totalDeposits += amount;
         lpToken.mint(msg.sender, lpTokensToMint);
-        
+
         emit Deposit(msg.sender, amount, lpTokensToMint);
     }
 
@@ -110,14 +112,14 @@ contract LendingPool is ILendingPool, Ownable, ReentrancyGuard {
         require(lpTokenAmount > 0, "Amount must be greater than 0");
         require(lpToken.balanceOf(msg.sender) >= lpTokenAmount, "Insufficient LP tokens");
         updateBorrowIndex();
-        
+
         uint256 assetsToWithdraw = (lpTokenAmount * getTotalAssets()) / lpToken.totalSupply();
         require(asset.balanceOf(address(this)) >= assetsToWithdraw, "Insufficient liquidity");
-        
+
         lpToken.burn(msg.sender, lpTokenAmount);
         totalDeposits -= assetsToWithdraw;
         asset.safeTransfer(msg.sender, assetsToWithdraw);
-        
+
         emit Withdraw(msg.sender, assetsToWithdraw, lpTokenAmount);
     }
 
@@ -127,10 +129,10 @@ contract LendingPool is ILendingPool, Ownable, ReentrancyGuard {
      */
     function depositCollateral(uint256 amount) external nonReentrant {
         require(amount > 0, "Amount must be greater than 0");
-        
+
         asset.safeTransferFrom(msg.sender, address(this), amount);
         userInfo[msg.sender].collateralBalance += amount;
-        
+
         emit DepositCollateral(msg.sender, amount);
     }
 
@@ -142,16 +144,16 @@ contract LendingPool is ILendingPool, Ownable, ReentrancyGuard {
         require(amount > 0, "Amount must be greater than 0");
         require(userInfo[msg.sender].collateralBalance >= amount, "Insufficient collateral");
         updateBorrowIndex();
-        
+
         UserInfo storage user = userInfo[msg.sender];
         user.collateralBalance -= amount;
-        
+
         // Check health factor after withdrawal
         uint256 borrowBalance = getUserBorrowBalance(msg.sender);
         if (borrowBalance > 0) {
             require(getHealthFactor(msg.sender) >= PRECISION, "Health factor too low");
         }
-        
+
         asset.safeTransfer(msg.sender, amount);
         emit WithdrawCollateral(msg.sender, amount);
     }
@@ -164,23 +166,23 @@ contract LendingPool is ILendingPool, Ownable, ReentrancyGuard {
         require(amount > 0, "Amount must be greater than 0");
         require(asset.balanceOf(address(this)) >= amount, "Insufficient liquidity");
         updateBorrowIndex();
-        
+
         UserInfo storage user = userInfo[msg.sender];
-        
+
         // Update user's borrow balance
         if (user.borrowBalance > 0) {
             user.borrowBalance = (user.borrowBalance * borrowIndex) / user.borrowIndex;
         }
         user.borrowBalance += amount;
         user.borrowIndex = borrowIndex;
-        
+
         // Check borrow capacity
         uint256 maxBorrow = (user.collateralBalance * COLLATERAL_FACTOR) / BASIS_POINTS;
         require(user.borrowBalance <= maxBorrow, "Insufficient collateral");
-        
+
         totalBorrows += amount;
         asset.safeTransfer(msg.sender, amount);
-        
+
         emit Borrow(msg.sender, amount);
     }
 
@@ -191,19 +193,19 @@ contract LendingPool is ILendingPool, Ownable, ReentrancyGuard {
     function repay(uint256 amount) external nonReentrant {
         require(amount > 0, "Amount must be greater than 0");
         updateBorrowIndex();
-        
+
         UserInfo storage user = userInfo[msg.sender];
         uint256 currentBorrowBalance = getUserBorrowBalance(msg.sender);
         require(currentBorrowBalance > 0, "No debt to repay");
-        
+
         uint256 repayAmount = amount > currentBorrowBalance ? currentBorrowBalance : amount;
-        
+
         user.borrowBalance = currentBorrowBalance - repayAmount;
         user.borrowIndex = borrowIndex;
-        
+
         totalBorrows -= repayAmount;
         asset.safeTransferFrom(msg.sender, address(this), repayAmount);
-        
+
         emit Repay(msg.sender, repayAmount);
     }
 
@@ -215,31 +217,31 @@ contract LendingPool is ILendingPool, Ownable, ReentrancyGuard {
     function liquidate(address borrower, uint256 repayAmount) external nonReentrant {
         require(borrower != msg.sender, "Cannot liquidate yourself");
         updateBorrowIndex();
-        
+
         require(getHealthFactor(borrower) < PRECISION, "Position is healthy");
-        
+
         UserInfo storage borrowerInfo = userInfo[borrower];
         uint256 borrowBalance = getUserBorrowBalance(borrower);
         require(borrowBalance > 0, "No debt to liquidate");
-        
+
         uint256 maxRepay = (borrowBalance * 5000) / BASIS_POINTS; // Max 50% of debt
         repayAmount = repayAmount > maxRepay ? maxRepay : repayAmount;
-        
+
         // Calculate collateral to seize (with liquidation bonus)
         uint256 collateralToSeize = (repayAmount * (BASIS_POINTS + LIQUIDATION_BONUS)) / BASIS_POINTS;
         require(borrowerInfo.collateralBalance >= collateralToSeize, "Insufficient collateral");
-        
+
         // Update borrower's balances
         borrowerInfo.borrowBalance = borrowBalance - repayAmount;
         borrowerInfo.borrowIndex = borrowIndex;
         borrowerInfo.collateralBalance -= collateralToSeize;
-        
+
         totalBorrows -= repayAmount;
-        
+
         // Transfer assets
         asset.safeTransferFrom(msg.sender, address(this), repayAmount);
         asset.safeTransfer(msg.sender, collateralToSeize);
-        
+
         emit Liquidation(msg.sender, borrower, collateralToSeize, repayAmount);
     }
 
@@ -249,9 +251,9 @@ contract LendingPool is ILendingPool, Ownable, ReentrancyGuard {
      */
     function getBorrowRate() public view returns (uint256) {
         if (totalDeposits == 0) return BASE_RATE;
-        
+
         uint256 utilization = (totalBorrows * BASIS_POINTS) / totalDeposits;
-        
+
         if (utilization <= OPTIMAL_UTILIZATION) {
             return BASE_RATE + (utilization * SLOPE1) / BASIS_POINTS;
         } else {
@@ -266,10 +268,10 @@ contract LendingPool is ILendingPool, Ownable, ReentrancyGuard {
      */
     function getSupplyRate() external view returns (uint256) {
         if (totalDeposits == 0) return 0;
-        
+
         uint256 borrowRate = getBorrowRate();
         uint256 utilization = (totalBorrows * BASIS_POINTS) / totalDeposits;
-        
+
         return (borrowRate * utilization) / BASIS_POINTS;
     }
 
@@ -289,7 +291,7 @@ contract LendingPool is ILendingPool, Ownable, ReentrancyGuard {
     function getUserBorrowBalance(address user) public view returns (uint256) {
         UserInfo storage userInfo_ = userInfo[user];
         if (userInfo_.borrowBalance == 0) return 0;
-        
+
         return (userInfo_.borrowBalance * borrowIndex) / userInfo_.borrowIndex;
     }
 
@@ -301,7 +303,7 @@ contract LendingPool is ILendingPool, Ownable, ReentrancyGuard {
     function getHealthFactor(address user) public view returns (uint256) {
         uint256 borrowBalance = getUserBorrowBalance(user);
         if (borrowBalance == 0) return type(uint256).max;
-        
+
         uint256 collateralValue = (userInfo[user].collateralBalance * LIQUIDATION_THRESHOLD) / BASIS_POINTS;
         return (collateralValue * PRECISION) / borrowBalance;
     }
