@@ -6,7 +6,6 @@ pragma solidity ^0.8.19;
  * @notice Interface for the lending pool contract
  */
 interface ILendingPool {
-
     // Structs
     struct UserInfo {
         uint256 collateralBalance;
@@ -21,7 +20,9 @@ interface ILendingPool {
     event WithdrawCollateral(address indexed user, uint256 amount);
     event Borrow(address indexed user, uint256 amount);
     event Repay(address indexed user, uint256 amount);
-    event Liquidation(address indexed liquidator, address indexed borrower, uint256 collateralSeized, uint256 debtRepaid);
+    event Liquidation(
+        address indexed liquidator, address indexed borrower, uint256 collateralSeized, uint256 debtRepaid
+    );
 
     // Core functions
     function deposit(uint256 amount) external;
@@ -39,5 +40,4 @@ interface ILendingPool {
     function getUserBorrowBalance(address user) external view returns (uint256);
     function getHealthFactor(address user) external view returns (uint256);
     function getUtilizationRate() external view returns (uint256);
-
 }
