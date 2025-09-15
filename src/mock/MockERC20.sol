@@ -8,4 +8,4 @@ import "@openzeppelin/contracts/token/ERC20/ERC20.sol";
  * @notice Simple ERC20 token for testing purposes
  * @dev Allows anyone to mint tokens for testing
  */
-contract MockERC20 {}
+contract MockERC20 is ERC20 {}
